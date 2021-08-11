@@ -13,7 +13,7 @@
     "clean": "rimraf ./dist",
     "build:js": "rollup --config",
     "build:types": "tsc --emitDeclarationOnly",
-    "build": "npm run clean && npm run build:types && npm run build:js",
+    "build": "npm run clean && npm run build:types && npm run build:js && npm pack",
     "format": "prettier --write '**/*.{js,jsx,json,ts,tsx}'",
     "lint": "eslint . --ext .ts,.js",
     "test": "jest test/*",

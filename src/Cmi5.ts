@@ -10,7 +10,6 @@ import XAPI, {
   StatementObject,
 } from "@xapi/xapi";
 import {
-  AuthTokenResponse,
   LaunchData,
   LaunchParameters,
   LearnerPreferences,
@@ -55,36 +54,38 @@ function _toResultScore(s?: ResultScore | number): ResultScore | undefined {
  * Reference: https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md
  */
 export default class Cmi5 {
-  private static _instance: Cmi5 | null = null;
-  private launchParameters: LaunchParameters;
-  private launchData!: LaunchData;
-  private learnerPreferences!: LearnerPreferences;
+  public launchParameters: LaunchParameters;
+  public launchData!: LaunchData;
+  // private learnerPreferences!: LearnerPreferences;
   private static _xapi: XAPI | null = null;
   private initialisedDate!: Date;
 
-  // static get instance(actor, activityId, endpoint): Cmi5 {
-  //   if (!Cmi5._instance) {
-  //     Cmi5._instance = new Cmi5(actor, activityId, endpoint);
-  //   }
-  //   return Cmi5._instance;
-  // }
 
-  static clearInstance(): void {
-    Cmi5._instance = null;
-  }
+
 
   static get xapi(): XAPI | null {
     return Cmi5._xapi;
   }
 
   constructor(actor: Agent, activityId: string, endpoint: string, authToken: string) {
-    // this.launchParameters = this.getLaunchParametersFromLMS();
-    // if (!this.launchParameters.fetch) {
-    //   throw Error("Unable to construct, no `fetch` parameter found in URL.");
-    // } else
+    const ct = {
+      registration: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    };
+    this.launchData = {
+      launchMode: "Normal",
+      moveOn: "NotApplicable",
+      contextTemplate: ct
+    };
+    this.launchParameters ={
+      actor: actor,
+      activityId: activityId,
+      endpoint: endpoint,
+      authToken: authToken
+    };
     if (authToken) {
       this.launchParameters.authToken = authToken;
-    } else {
+    } 
+    else {
       throw Error("Unable to construct, no `authToken` parameter found");
     }
     if (endpoint) {
@@ -104,11 +105,7 @@ export default class Cmi5 {
         "Unable to construct, no `activityId` parameter found"
       );
     }
-    // if (!this.launchParameters.registration) {
-    //   throw Error(
-    //     "Unable to construct, no `registration` parameter found in URL."
-    //   );
-    // }
+
   }
 
   public static get isCmiAvailable(): boolean {
@@ -133,66 +130,12 @@ export default class Cmi5 {
     return Boolean(Cmi5._xapi);
   }
 
-  public getLaunchParameters(): LaunchParameters {
-    return this.launchParameters;
-  }
-
-  public getLaunchData(): LaunchData {
-    return this.launchData;
-  }
-
-  // 11.0 xAPI Agent Profile Data Model - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#110-xapi-agent-profile-data-model
-  // public getLearnerPreferences(): LearnerPreferences {
-  //   return this.learnerPreferences;
-  // }
-
-  // "cmi5 defined" Statements
-  // public initialize(): AxiosPromise<string[]> {
-  //   return this.getAuthTokenFromLMS(this.launchParameters.fetch)
-  //     .then((response) => {
-  //       const authToken: string = response.data["auth-token"];
-  //       Cmi5._xapi = new XAPI(
-  //         this.launchParameters.endpoint,
-  //         `Basic ${authToken}`
-  //       );
-  //       return this.getLaunchDataFromLMS();
-  //     })
-  //     .then((result) => {
-  //       this.launchData = result.data;
-  //     })
-  //     .then(() => {
-  //       return this.getLearnerPreferencesFromLMS();
-  //     })
-  //     .then((result) => {
-  //       this.learnerPreferences = result.data || {};
-  //     })
-  //     .then(() => {
-  //       this.initialisedDate = new Date();
-  //       // 9.3.2 Initialized - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#932-initialized
-  //       return this.sendCmi5DefinedStatement({
-  //         verb: Cmi5DefinedVerbs.INITIALIZED,
-  //       });
-  //     });
-  // }
 
   //  "cmi5 defined" Statements
-  public initialize(authToken): AxiosPromise<string[]> {
-    // return this.getAuthTokenFromLMS(this.launchParameters.fetch)
-    // .then((response) => {
-    // const authToken: string = response.data["auth-token"];
-    Cmi5._xapi = new XAPI(this.launchParameters.endpoint, `Basic ${authToken}`);
-    // return this.getLaunchDataFromLMS();
-    // })
-    // .then((result) => {
-    // this.launchData = result.data;
-    // })
-    // .then(() => {
-    //   return this.getLearnerPreferencesFromLMS();
-    // })
-    // .then((result) => {
-    //   this.learnerPreferences = result.data || {};
-    // })
-    // .then(() => {
+  public initialize(): AxiosPromise<string[]> {
+
+    Cmi5._xapi = new XAPI(this.launchParameters.endpoint, `Basic ${this.launchParameters.authToken}`);
+
     this.initialisedDate = new Date();
     // 9.3.2 Initialized - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#932-initialized
     return this.sendCmi5DefinedStatement({
