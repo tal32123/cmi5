@@ -45,8 +45,8 @@ function _isObjectiveActivity(x?: any): boolean {
 function _toResultScore(s?: ResultScore | number): ResultScore | undefined {
   return !isNaN(Number(s))
     ? {
-        scaled: Number(s),
-      }
+      scaled: Number(s),
+    }
     : (s as ResultScore);
 }
 
@@ -62,12 +62,12 @@ export default class Cmi5 {
   private static _xapi: XAPI | null = null;
   private initialisedDate!: Date;
 
-  static get instance(): Cmi5 {
-    if (!Cmi5._instance) {
-      Cmi5._instance = new Cmi5();
-    }
-    return Cmi5._instance;
-  }
+  // static get instance(actor, activityId, endpoint): Cmi5 {
+  //   if (!Cmi5._instance) {
+  //     Cmi5._instance = new Cmi5(actor, activityId, endpoint);
+  //   }
+  //   return Cmi5._instance;
+  // }
 
   static clearInstance(): void {
     Cmi5._instance = null;
@@ -77,23 +77,38 @@ export default class Cmi5 {
     return Cmi5._xapi;
   }
 
-  constructor() {
-    this.launchParameters = this.getLaunchParametersFromLMS();
-    if (!this.launchParameters.fetch) {
-      throw Error("Unable to construct, no `fetch` parameter found in URL.");
-    } else if (!this.launchParameters.endpoint) {
-      throw Error("Unable to construct, no `endpoint` parameter found in URL");
-    } else if (!this.launchParameters.actor) {
-      throw Error("Unable to construct, no `actor` parameter found in URL.");
-    } else if (!this.launchParameters.activityId) {
+  constructor(actor: Agent, activityId: string, endpoint: string, authToken: string) {
+    // this.launchParameters = this.getLaunchParametersFromLMS();
+    // if (!this.launchParameters.fetch) {
+    //   throw Error("Unable to construct, no `fetch` parameter found in URL.");
+    // } else
+    if (authToken) {
+      this.launchParameters.authToken = authToken;
+    } else {
+      throw Error("Unable to construct, no `authToken` parameter found");
+    }
+    if (endpoint) {
+      this.launchParameters.endpoint = endpoint;
+    } else {
+      throw Error("Unable to construct, no `endpoint` parameter found");
+    }
+    if (actor) {
+      this.launchParameters.actor = actor;
+    } else {
+      throw Error("Unable to construct, no `actor` parameter found");
+    }
+    if (activityId) {
+      this.launchParameters.activityId = activityId;
+    } else {
       throw Error(
-        "Unable to construct, no `activityId` parameter found in URL."
-      );
-    } else if (!this.launchParameters.registration) {
-      throw Error(
-        "Unable to construct, no `registration` parameter found in URL."
+        "Unable to construct, no `activityId` parameter found"
       );
     }
+    // if (!this.launchParameters.registration) {
+    //   throw Error(
+    //     "Unable to construct, no `registration` parameter found in URL."
+    //   );
+    // }
   }
 
   public static get isCmiAvailable(): boolean {
@@ -107,10 +122,10 @@ export default class Cmi5 {
     return Boolean(
       // true if has all required cmi5 query params
       p.get("fetch") &&
-        p.get("endpoint") &&
-        p.get("actor") &&
-        p.get("registration") &&
-        p.get("activityId")
+      p.get("endpoint") &&
+      p.get("actor") &&
+      p.get("registration") &&
+      p.get("activityId")
     );
   }
 
@@ -127,39 +142,64 @@ export default class Cmi5 {
   }
 
   // 11.0 xAPI Agent Profile Data Model - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#110-xapi-agent-profile-data-model
-  public getLearnerPreferences(): LearnerPreferences {
-    return this.learnerPreferences;
-  }
+  // public getLearnerPreferences(): LearnerPreferences {
+  //   return this.learnerPreferences;
+  // }
 
   // "cmi5 defined" Statements
-  public initialize(): AxiosPromise<string[]> {
-    return this.getAuthTokenFromLMS(this.launchParameters.fetch)
-      .then((response) => {
-        const authToken: string = response.data["auth-token"];
-        Cmi5._xapi = new XAPI(
-          this.launchParameters.endpoint,
-          `Basic ${authToken}`
-        );
-        return this.getLaunchDataFromLMS();
-      })
-      .then((result) => {
-        this.launchData = result.data;
-      })
-      .then(() => {
-        return this.getLearnerPreferencesFromLMS();
-      })
-      .then((result) => {
-        this.learnerPreferences = result.data || {};
-      })
-      .then(() => {
-        this.initialisedDate = new Date();
-        // 9.3.2 Initialized - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#932-initialized
-        return this.sendCmi5DefinedStatement({
-          verb: Cmi5DefinedVerbs.INITIALIZED,
-        });
-      });
-  }
+  // public initialize(): AxiosPromise<string[]> {
+  //   return this.getAuthTokenFromLMS(this.launchParameters.fetch)
+  //     .then((response) => {
+  //       const authToken: string = response.data["auth-token"];
+  //       Cmi5._xapi = new XAPI(
+  //         this.launchParameters.endpoint,
+  //         `Basic ${authToken}`
+  //       );
+  //       return this.getLaunchDataFromLMS();
+  //     })
+  //     .then((result) => {
+  //       this.launchData = result.data;
+  //     })
+  //     .then(() => {
+  //       return this.getLearnerPreferencesFromLMS();
+  //     })
+  //     .then((result) => {
+  //       this.learnerPreferences = result.data || {};
+  //     })
+  //     .then(() => {
+  //       this.initialisedDate = new Date();
+  //       // 9.3.2 Initialized - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#932-initialized
+  //       return this.sendCmi5DefinedStatement({
+  //         verb: Cmi5DefinedVerbs.INITIALIZED,
+  //       });
+  //     });
+  // }
 
+  //  "cmi5 defined" Statements
+  public initialize(authToken): AxiosPromise<string[]> {
+    // return this.getAuthTokenFromLMS(this.launchParameters.fetch)
+    // .then((response) => {
+    // const authToken: string = response.data["auth-token"];
+    Cmi5._xapi = new XAPI(this.launchParameters.endpoint, `Basic ${authToken}`);
+    // return this.getLaunchDataFromLMS();
+    // })
+    // .then((result) => {
+    // this.launchData = result.data;
+    // })
+    // .then(() => {
+    //   return this.getLearnerPreferencesFromLMS();
+    // })
+    // .then((result) => {
+    //   this.learnerPreferences = result.data || {};
+    // })
+    // .then(() => {
+    this.initialisedDate = new Date();
+    // 9.3.2 Initialized - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#932-initialized
+    return this.sendCmi5DefinedStatement({
+      verb: Cmi5DefinedVerbs.INITIALIZED,
+    });
+    // });
+  }
   public complete(options?: SendStatementOptions): AxiosPromise<string[]> {
     // 10.0 xAPI State Data Model - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#100-xapi-state-data-model
     if (this.launchData.launchMode !== "Normal")
@@ -213,11 +253,11 @@ export default class Cmi5 {
     const [objective, options] = _isObjectiveActivity(objectiveOrOptions)
       ? [objectiveOrOptions as ObjectiveActivity, undefined]
       : [
-          (objectiveOrOptions as PassOptions)
-            ? (objectiveOrOptions as PassOptions).objectiveActivity
-            : undefined,
-          objectiveOrOptions as SendStatementOptions,
-        ];
+        (objectiveOrOptions as PassOptions)
+          ? (objectiveOrOptions as PassOptions).objectiveActivity
+          : undefined,
+        objectiveOrOptions as SendStatementOptions,
+      ];
     return this.sendCmi5DefinedStatement(
       {
         // 9.3.4 Passed - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#934-passed
@@ -242,17 +282,17 @@ export default class Cmi5 {
             // Best Practice #1 - Use of Objectives - https://aicc.github.io/CMI-5_Spec_Current/best_practices/
             ...(objective
               ? {
-                  parent: [objective as ObjectiveActivity],
-                }
+                parent: [objective as ObjectiveActivity],
+              }
               : {}),
           },
           ...(this.launchData.masteryScore
             ? {
-                extensions: {
-                  "https://w3id.org/xapi/cmi5/context/extensions/masteryscore":
-                    this.launchData.masteryScore,
-                },
-              }
+              extensions: {
+                "https://w3id.org/xapi/cmi5/context/extensions/masteryscore":
+                  this.launchData.masteryScore,
+              },
+            }
             : {}),
         },
       },
@@ -294,11 +334,11 @@ export default class Cmi5 {
           },
           ...(this.launchData.masteryScore
             ? {
-                extensions: {
-                  "https://w3id.org/xapi/cmi5/context/extensions/masteryscore":
-                    this.launchData.masteryScore,
-                },
-              }
+              extensions: {
+                "https://w3id.org/xapi/cmi5/context/extensions/masteryscore":
+                  this.launchData.masteryScore,
+              },
+            }
             : {}),
         },
       },
@@ -356,8 +396,8 @@ export default class Cmi5 {
         interactionType: "true-false",
         ...(correctAnswer !== undefined
           ? {
-              correctResponsesPattern: correctAnswer ? ["true"] : ["false"],
-            }
+            correctResponsesPattern: correctAnswer ? ["true"] : ["false"],
+          }
           : {}),
         ...(name ? { name } : {}),
         ...(description ? { description } : {}),
@@ -389,8 +429,8 @@ export default class Cmi5 {
         interactionType: "choice",
         ...(correctAnswerIds
           ? {
-              correctResponsesPattern: [correctAnswerIds.join("[,]")],
-            }
+            correctResponsesPattern: [correctAnswerIds.join("[,]")],
+          }
           : {}),
         ...(choices ? { choices } : {}),
         ...(name ? { name } : {}),
@@ -422,8 +462,8 @@ export default class Cmi5 {
         interactionType: "fill-in",
         ...(correctAnswers
           ? {
-              correctResponsesPattern: [correctAnswers.join("[,]")],
-            }
+            correctResponsesPattern: [correctAnswers.join("[,]")],
+          }
           : {}),
         ...(name ? { name } : {}),
         ...(description ? { description } : {}),
@@ -454,8 +494,8 @@ export default class Cmi5 {
         interactionType: "long-fill-in",
         ...(correctAnswers
           ? {
-              correctResponsesPattern: [correctAnswers.join("[,]")],
-            }
+            correctResponsesPattern: [correctAnswers.join("[,]")],
+          }
           : {}),
         ...(name ? { name } : {}),
         ...(description ? { description } : {}),
@@ -487,8 +527,8 @@ export default class Cmi5 {
         interactionType: "likert",
         ...(correctAnswerId
           ? {
-              correctResponsesPattern: [correctAnswerId],
-            }
+            correctResponsesPattern: [correctAnswerId],
+          }
           : {}),
         ...(scale ? { scale } : {}),
         ...(name ? { name } : {}),
@@ -526,14 +566,14 @@ export default class Cmi5 {
         interactionType: "matching",
         ...(correctAnswers
           ? {
-              correctResponsesPattern: [
-                Object.keys(correctAnswers)
-                  .map((key) => {
-                    return `${key}[.]${correctAnswers[key]}`;
-                  })
-                  .join("[,]"),
-              ],
-            }
+            correctResponsesPattern: [
+              Object.keys(correctAnswers)
+                .map((key) => {
+                  return `${key}[.]${correctAnswers[key]}`;
+                })
+                .join("[,]"),
+            ],
+          }
           : {}),
         ...(source ? { source } : {}),
         ...(target ? { target } : {}),
@@ -571,23 +611,23 @@ export default class Cmi5 {
         interactionType: "performance",
         ...(correctAnswers
           ? {
-              correctResponsesPattern: [
-                Object.keys(correctAnswers)
-                  .map((key) => {
-                    const exact: string = correctAnswers[key].exact
-                      ? correctAnswers[key].exact.toString()
-                      : "";
-                    const min: string = correctAnswers[key].min
-                      ? correctAnswers[key].min.toString()
-                      : "";
-                    const max: number = correctAnswers[key].max
-                      ? correctAnswers[key].max.toString()
-                      : "";
-                    return `${key}[.]${exact ? exact : min + ":" + max}`;
-                  })
-                  .join("[,]"),
-              ],
-            }
+            correctResponsesPattern: [
+              Object.keys(correctAnswers)
+                .map((key) => {
+                  const exact: string = correctAnswers[key].exact
+                    ? correctAnswers[key].exact.toString()
+                    : "";
+                  const min: string = correctAnswers[key].min
+                    ? correctAnswers[key].min.toString()
+                    : "";
+                  const max: number = correctAnswers[key].max
+                    ? correctAnswers[key].max.toString()
+                    : "";
+                  return `${key}[.]${exact ? exact : min + ":" + max}`;
+                })
+                .join("[,]"),
+            ],
+          }
           : {}),
         ...(steps ? { steps } : {}),
         ...(name ? { name } : {}),
@@ -620,8 +660,8 @@ export default class Cmi5 {
         interactionType: "sequencing",
         ...(correctAnswerIds
           ? {
-              correctResponsesPattern: [correctAnswerIds.join("[,]")],
-            }
+            correctResponsesPattern: [correctAnswerIds.join("[,]")],
+          }
           : {}),
         ...(choices ? { choices } : {}),
         ...(name ? { name } : {}),
@@ -653,16 +693,15 @@ export default class Cmi5 {
         interactionType: "numeric",
         ...(correctAnswer
           ? {
-              correctResponsesPattern: [
-                `${
-                  (correctAnswer as NumericExact).exact
-                    ? (correctAnswer as NumericExact).exact
-                    : (correctAnswer as NumericRange).min +
-                      ":" +
-                      (correctAnswer as NumericRange).max
-                }`,
-              ],
-            }
+            correctResponsesPattern: [
+              `${(correctAnswer as NumericExact).exact
+                ? (correctAnswer as NumericExact).exact
+                : (correctAnswer as NumericRange).min +
+                ":" +
+                (correctAnswer as NumericRange).max
+              }`,
+            ],
+          }
           : {}),
         ...(name ? { name } : {}),
         ...(description ? { description } : {}),
@@ -693,8 +732,8 @@ export default class Cmi5 {
         interactionType: "other",
         ...(correctAnswer
           ? {
-              correctResponsesPattern: [correctAnswer],
-            }
+            correctResponsesPattern: [correctAnswer],
+          }
           : {}),
         ...(name ? { name } : {}),
         ...(description ? { description } : {}),
@@ -720,11 +759,11 @@ export default class Cmi5 {
         response: response,
         ...(duration
           ? {
-              duration: XAPI.calculateISO8601Duration(
-                duration.start,
-                duration.end
-              ),
-            }
+            duration: XAPI.calculateISO8601Duration(
+              duration.start,
+              duration.end
+            ),
+          }
           : {}),
         ...(typeof success === "boolean" ? { success } : {}),
       },
@@ -737,12 +776,12 @@ export default class Cmi5 {
       // Best Practice #1 - Use of Objectives - https://aicc.github.io/CMI-5_Spec_Current/best_practices/
       ...(objective
         ? {
-            context: {
-              contextActivities: {
-                parent: [objective],
-              },
+          context: {
+            contextActivities: {
+              parent: [objective],
             },
-          }
+          },
+        }
         : {}),
     });
   }
@@ -789,9 +828,9 @@ export default class Cmi5 {
           transform:
             typeof transformProvided === "function"
               ? // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-                (s) => transformProvided(_setResultScore(s))
+              (s) => transformProvided(_setResultScore(s))
               : // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-                (s) => _setResultScore(s),
+              (s) => _setResultScore(s),
         };
       }
     }
@@ -813,39 +852,39 @@ export default class Cmi5 {
     toIds.push.apply(toIds, response.data);
   }
 
-  private getLaunchParametersFromLMS(): LaunchParameters {
-    return XAPI.getSearchQueryParamsAsObject(
-      window.location.href
-    ) as LaunchParameters;
-  }
+  // private getLaunchParametersFromLMS(): LaunchParameters {
+  //   return XAPI.getSearchQueryParamsAsObject(
+  //     window.location.href
+  //   ) as LaunchParameters;
+  // }
 
-  private getAuthTokenFromLMS(
-    fetchUrl: string
-  ): AxiosPromise<AuthTokenResponse> {
-    return axios.post<AuthTokenResponse>(fetchUrl);
-  }
+  // private getAuthTokenFromLMS(
+  //   fetchUrl: string
+  // ): AxiosPromise<AuthTokenResponse> {
+  //   return axios.post<AuthTokenResponse>(fetchUrl);
+  // }
 
-  private getLaunchDataFromLMS(): AxiosPromise<LaunchData> {
-    return Cmi5._xapi.getState(
-      this.launchParameters.actor,
-      this.launchParameters.activityId,
-      "LMS.LaunchData",
-      this.launchParameters.registration
-    ) as AxiosPromise<LaunchData>;
-  }
+  // private getLaunchDataFromLMS(): AxiosPromise<LaunchData> {
+  //   return Cmi5._xapi.getState(
+  //     this.launchParameters.actor,
+  //     this.launchParameters.activityId,
+  //     "LMS.LaunchData",
+  //     this.launchParameters.registration
+  //   ) as AxiosPromise<LaunchData>;
+  // }
 
-  private getLearnerPreferencesFromLMS(): AxiosPromise<LearnerPreferences> {
-    return Cmi5._xapi
-      .getAgentProfile(this.launchParameters.actor, "cmi5LearnerPreferences")
-      .then(
-        (result) => {
-          return result.data;
-        },
-        () => {
-          return {};
-        }
-      ) as AxiosPromise<LearnerPreferences>;
-  }
+  // private getLearnerPreferencesFromLMS(): AxiosPromise<LearnerPreferences> {
+  //   return Cmi5._xapi
+  //     .getAgentProfile(this.launchParameters.actor, "cmi5LearnerPreferences")
+  //     .then(
+  //       (result) => {
+  //         return result.data;
+  //       },
+  //       () => {
+  //         return {};
+  //       }
+  //     ) as AxiosPromise<LearnerPreferences>;
+  // }
 
   private sendCmi5DefinedStatement(
     statement: Partial<Statement>,
@@ -888,7 +927,7 @@ export default class Cmi5 {
     // 10.0 xAPI State Data Model - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#100-xapi-state-data-model
     const context: Context = Object.assign({}, this.launchData.contextTemplate);
     // 9.6.1 Registration - https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#961-registration
-    context.registration = this.launchParameters.registration;
+    // context.registration = this.launchParameters.registration;
     const cmi5AllowedStatementRequirements: Partial<Statement> = {
       id: id,
       actor: actor,
